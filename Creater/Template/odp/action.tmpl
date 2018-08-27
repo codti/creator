@@ -1,0 +1,23 @@
+<?php
+/**
+ * file  : {{FILE}}
+ * author: {{AUTHOR}}
+ * date  : {{DATE}}
+ * brief :
+ */
+class {{CLASS_NAME}} {{PARENT_CLASS}}
+{
+    public function invoke()
+    {
+        $arrInput = array(
+            'userInfo'    => $this->_userInfo,
+        );
+
+        Hk_Util_Log::start('log');
+
+        $obj = new obj();
+
+        $this->_outPut['data'] = $obj->execute($arrInput);
+        Hk_Util_Log::stop('log');
+    }
+}

@@ -1,0 +1,76 @@
+<?php
+
+/**
+ * file  : {{FILE}}
+ * author: {{AUTHOR}}
+ * date  : {{DATE}}
+ * brief :
+ */
+class {{APP_NAME_CLASS}}_Exception extends Exception
+{
+    const TRACE   = 'trace';
+    const DEBUG   = 'debug';
+    const NOTICE  = 'notice';
+    const WARNING = 'warning';
+    const FATAL   = 'fatal';
+
+    protected $errno;
+    protected $errstr;
+    protected $arg;
+    protected $errmsg;        // 错误号对应的错误信息
+    protected $errext;        // 附加信息
+
+    /**
+     * @param int    $errno      传入的错误号
+     * @param string $errext     附加信息
+     * @param array  $arg        上下文
+     * @param string $level      日志打印级别
+     * @return void
+     */
+    public function __construct($errno, $errext = '', $arg = array(), $level = self::WARNING) {
+        $this->errno  = $errno;
+        $this->errext = $errext;
+        $this->arg    = $arg;
+        if (empty($this->arg) || !is_array($this->arg)) {
+            $this->arg = array();
+        }
+
+        $this->errmsg = MisFz_ExceptionCodes::getErrMsg($errno);
+        $this->errstr = $this->errmsg . ('' != $errext ? " -- {$errext}" : '');
+
+        $stackTrace   = $this->getTrace();
+        $class        = @$stackTrace[0]['class'];
+        $type         = @$stackTrace[0]['type'];
+        $function     = @$stackTrace[0]['function'];
+        $file         = $this->file;
+        $line         = $this->line;
+        if (null != $class) {
+            $function = "{$class}{$type}{$function}";
+        }
+        if (empty($level)) {
+            $level    = self::WARNING;
+        }
+        Bd_Log::$level("{$this->errstr} at [{$function} at {$file}:{$line}]", $this->errno, $this->arg, 1);
+        parent::__construct($this->errstr, $errno);
+    }
+
+    public function getErrNo() {
+        return $this->errno;
+    }
+
+    public function getErrStr() {
+        return $this->errstr;
+    }
+
+    public function getErrMsg() {
+        return $this->errmsg;
+    }
+
+    public function getErrExt() {
+        return $this->errext;
+    }
+
+    public function getErrArg() {
+        return $this->arg;
+    }
+}

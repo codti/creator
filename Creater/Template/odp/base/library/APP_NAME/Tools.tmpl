@@ -1,0 +1,334 @@
+<?php
+
+/**
+ * file  : {{FILE}}
+ * author: {{AUTHOR}}
+ * date  : {{DATE}}
+ * brief :
+ */
+class {{APP_NAME_CLASS}}_Tools
+{
+   /**
+     * 生成新的key-value数组
+     * @param $array
+     * @param $newKeyKey
+     * @param $newValueKey
+     * @return array
+     */
+    public static function getNewKeyValueArray($array, $newKeyKey, $newValueKey) {
+        if (!$array) {
+            return array();
+        }
+        $arrRet = array();
+        foreach ($array as $oneRow) {
+            $arrRet[$oneRow[$newKeyKey]] = $oneRow[$newValueKey];
+        }
+
+        return $arrRet;
+    }
+
+    /**
+     * 生成新的value数组
+     * @param $array
+     * @param $newValue
+     * @return array
+     */
+    public static function getNewValueArray($array, $newValue) {
+        if (!$array) {
+            return array();
+        }
+        $arrRet = array();
+        foreach ($array as $oneRow) {
+            $arrRet[] = $oneRow[$newValue];
+        }
+
+        return $arrRet;
+    }
+
+    /**
+     * 生成新的key数组
+     * @param $array
+     * @param $newKeyKey
+     * @return array
+     */
+    public static function getNewKeyArray($array, $newKeyKey) {
+        if (!$array) {
+            return array();
+        }
+        $arrRet = array();
+        foreach ($array as $oneRow) {
+            $arrRet[$oneRow[$newKeyKey]] = $oneRow;
+        }
+
+        return $arrRet;
+    }
+    //生成csv文件
+    public static function genCsv($data){
+        $tmpFileName = '/tmp/tmpName.csv';
+        $handel      = @fopen($tmpFileName,'w');
+        fwrite($handel,"\xEF\xBB\xBF");
+        foreach($data as $k=>$v){
+            fputcsv($handel,$v);
+        }
+        fclose($handel);
+        self::downfile($tmpFileName);
+    }
+    //下载
+    private static function downfile($fileurl,$ext = '.csv'){
+        $filename=$fileurl;
+        $file  =  fopen($filename, "rb"); 
+        Header( "Content-type:  application/octet-stream "); 
+        Header( "Accept-Ranges:  bytes "); 
+        Header( "Content-Disposition:  attachment;  filename= ".date('YmdHi',time()).$ext); 
+        $contents = ""; 
+        while (!feof($file)) {
+            $contents .= fread($file, 16*2014);
+        }   
+        echo $contents;
+        fclose($file); 
+    }
+
+    /**
+     * 将一个二维数组按照多个列进行排序，类似 SQL 语句中的 ORDER BY
+     *
+     * 用法：
+     * @code php
+     * $rows = AssistantDesk_Tools::sortByMultiCols($rows, array(
+     *           'parent' => SORT_ASC,
+     *           'name' => SORT_DESC,
+     * ));
+     * @endcode
+     *
+     * @param array $rowset 要排序的数组
+     * @param array $args 排序的键
+     *
+     * @return array 排序后的数组
+     */
+    public static function sortByMultiCols($rowset, $args) {
+
+        if(!$rowset){
+            return array();
+        }
+        $sortArray = array();
+        $sortRule = '';
+        foreach ($args as $sortField => $sortDir) {
+            foreach ($rowset as $offset => $row) {
+                $sortArray[$sortField][$offset] = $row[$sortField];
+            }
+            $sortRule .= '$sortArray[\'' . $sortField . '\'], ' . $sortDir . ', ';
+        }
+        if (empty($sortArray) || empty($sortRule)) {
+            return $rowset;
+        }
+        eval('array_multisort(' . $sortRule . '$rowset);');
+        return $rowset;
+    }
+    /**
+     * 数组数据查找
+     * @param $data
+     * @param $column
+     * @param $value
+     * @return array
+     */
+    public static function findColItem($data, $column, $value)
+    {
+        if (empty($data)){
+            return array();
+        }
+
+        $return = array();
+
+        foreach ($data as $item) {
+            if ($item[$column] == $value){
+                $return[] = $item;
+            }
+        }
+
+        return $return;
+    }
+
+    /**
+     * 获取二维数组内指定值出现的次数
+     * @param $data
+     * @param $dst
+     * @param $isTop //第一层计数
+     * @return int
+     */
+    public static function getDstValue($data, $dst, $isTop = 0)
+    {
+        $num = 0;
+        $topNum = 0;
+
+        foreach ($data as $item ) {
+            $topFlag = 0;
+            foreach ($item as $k => $v) {
+                if (is_string($dst) && $v === $dst) {
+                    $num++;
+                    $topFlag = 1;
+                }
+            }
+            if ($topFlag == 1) {
+                $topNum++;
+            }
+        }
+
+        if ($isTop == 1) {
+            return $topNum;
+        }else{
+            return $num;
+        }
+    }
+
+    /**
+     * 获取未来60天指定日期
+     * @param $cnt
+     * @return array
+     */
+    public static function getDayDate($cnt)
+    {
+        if ($cnt <= 0) {
+            return array();
+        }
+
+        $cur = time();
+        $date = array();
+
+        for($i = 0; $i < $cnt; $i++) {
+            $day = date('Ymd', $cur + (86400 * $i));
+
+            $date[] = $day;
+        }
+
+        return $date;
+    }
+
+    /**
+     * 获取今日开始时间戳
+     */
+    public static function getTodayStartTimestramp(){
+
+        return strtotime(date('Y-m-d'.' 00:00:00',time()));
+    }
+
+    /**
+     * 实现array_column
+     * @param $arr        数组
+     * @param $columnKey  列键值
+     */
+    public static function arrayColumns($arr, $columnKey){
+
+        if(empty($arr)){
+            return array();
+        }
+        $ret = array();
+        foreach ($arr as $v){
+            if(isset($v[$columnKey])){
+                $ret[] = $v[$columnKey];
+            }
+        }
+        return $ret;
+    }
+    
+    // 格式化时间
+    public static function changeTimeType($seconds){
+        if ($seconds > 3600) {
+            $hours = intval($seconds/3600);
+            $minutes = $seconds % 3600;
+            $time = $hours.":".gmstrftime('%M:%S', $minutes);
+        }
+        else {
+            $time = gmstrftime('%H:%M:%S', $seconds);
+        }
+        return $time;
+    }
+
+    /**
+     * 获取今日结束时间戳
+     */
+    public static function getTodayStopTimestramp(){
+
+        return strtotime(date('Y-m-d'.' 23:59:59',time()));
+    }
+
+
+    /**
+     * 格式化剩余时间
+     * @param $remainTime 剩余时间
+     *
+     */
+    public static function formatRemainTime($remainTime) {
+
+        $str = '';
+        $day = floor($remainTime / 86400);
+        $str .= $day > 0 ? $day . '天' : '';
+        $hours = floor(($remainTime % 86400) / 3600);
+        $str .= $hours > 0 ? $hours . '小时' : '';
+        $minutes = floor((($remainTime % 86400) % 3600) / 60);
+        $str .= $minutes > 0 ? $minutes . '分钟' : '';
+        return $str ? $str : 0 . '分钟';
+    }
+    
+    /**
+     * 推送消息到直播课
+     * @param array $arrRecommend
+     * @param integer $opType
+     * @return array|bool|string
+     * @author wangwen@zuoyebang.com
+     * @since 2018/5/27
+     */
+    public static function pushMsgToLive($lessonId = 0, $url = '', $opType = 1)
+    {
+        $objLesson  = new Hkzb_Ds_Fudao_Lesson();
+        $lessonInfo = $objLesson->getLessonInfo($lessonId);
+        
+        if(false === $lessonInfo || empty($lessonInfo)){
+            Bd_Log::warning("Error[获取直播课信息错误], Detail[lessonId:$lessonId]");
+            return false;
+        }
+        $courseId           =   intval($lessonInfo['courseId']);
+        $objTeacherCourse   =   new Hkzb_Ds_Fudao_TeacherCourse();
+        $arrTeacherList     =   $objTeacherCourse->getTeacherList($courseId);
+        $arrFirstTeacher    =   isset($arrTeacherList[0]) ? $arrTeacherList[0] : array();
+        
+        if( empty($arrFirstTeacher) ) {
+            Bd_Log::warning("Error: [获取直播课教师信息错误],Detail: [lessonId:$lessonId]");
+            return false;
+        }
+        
+        $intTeacherUid =   $arrFirstTeacher['teacherUid'];
+        
+        $objRecommendBuilder    =   (new MisFz_Live_Template_Recommend())->setFromUid($intTeacherUid)
+            ->setLessonId($lessonId)
+            ->setSignalNo(Hkzb_Const_FudaoMsgSignal::PLUGIN_COMMON_START_SIGNAL)
+            ->setOpType($opType)
+            ->setUrl($url);
+        
+        $ret = (new MisFz_Live_Msg($objRecommendBuilder))->push();
+        if(!isset($ret['err_no']) || intval($ret['err_no']) !== 0) {
+            $ret = json_encode($ret);
+            Bd_Log::warning("Error:[直播课消息推送失败], Detail:[teacherUid:$intTeacherUid lessonId:$lessonId ret:$ret]");
+            return false;
+        }
+        return $ret;
+    }
+
+    /**
+     * 生成前端下拉框选项
+     * @param $arr 值-名
+     * @return array
+     */
+    public static function makeOptions($arr) {
+        $options = [];
+        if (empty($arr)) {
+            return $options;
+        }
+        foreach ($arr as $k => $v) {
+            $options[] = [
+                'type' => $k,
+                'name' => $v,
+            ];
+        }
+        return $options;
+    }
+
+}

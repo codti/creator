@@ -1,0 +1,350 @@
+<?php
+/***************************************************************************
+ * Copyright (c) 2015 Baidu.com, Inc. All Rights Reserved
+ **************************************************************************/
+
+
+/**
+ * file  : {{FILE}}
+ * author: {{AUTHOR}}
+ * date  : {{DATE}}
+ * brief :
+ */
+class {{APP_NAME_CLASS}}_Comm
+{
+    /**
+     * 隐藏手机号用户
+     * @param $str
+     * @return string
+     */
+    public static function procPhone($str) {
+        $str = trim(strval($str));
+        $len = strlen($str);
+        if ($len >= 7 && preg_match('#^\d+$#', $str, $m)) {
+            $ret = substr($str, 0, 2) . '***' . substr($str, $len - 2, 2);
+        } else {
+            $ret = $str;
+        }
+
+        return $ret;
+    }
+
+    /**
+     * @param string $url
+     * @param array  $post
+     * @param int  $timeOut
+     * @return mixed
+     */
+    public static function CurlPost($url, $post = null, $timeOut = 3) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $timeOut);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        /****** 测试用 ******/
+        curl_setopt($ch, CURLOPT_PROXYAUTH, CURLAUTH_BASIC); //代理认证模式
+        curl_setopt($ch, CURLOPT_PROXY, 'http://proxy.zuoyebang.com'); //代理服务器地址
+        curl_setopt($ch, CURLOPT_PROXYPORT, '80'); //代理服务器端口
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE); // https请求 不验证证书和hosts
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
+        /****** 测试用 ******/
+        $result = curl_exec($ch);
+        $ret = curl_getinfo($ch);
+        curl_close($ch);
+        return $result;
+    }
+
+    /**
+     * 秒数格式化
+     * @param $intSecond
+     * @return string
+     */
+    public static function secondFormat($intSecond) {
+        //格式化时长
+        $h = $intSecond / 3600;
+        $m = ($intSecond % 3600) / 60;
+        $i = ($intSecond % 3600) % 60;
+
+        return sprintf('%02d:%02d:%02d', $h, $m, $i);
+    }
+
+    /**
+     * @param $uid
+     * @return mixed
+     */
+    public static function getUserInfo($uid) {
+        $objUser = new Hk_Ds_User_Ucloud();
+
+        return $objUser->getUserInfo($uid);
+    }
+
+    public static function getHXUidByPhone($mobile) {
+        $objDsAccount = new Fz_Ds_Account();
+        $uid = $objDsAccount->getUidByPhone($mobile);
+        if (false === $uid) {
+            Bd_Log::warning("Error[getUidByPhone error] Detail[phone:$mobile]");
+            return false;
+        }
+        $arrData = array(
+            'uid' => 0,
+            'phone' => $mobile,
+        );
+        $arrData['uid'] = $uid;
+        return $arrData;
+    }
+
+    /**
+     * @param $mobile
+     * @return array|bool
+     */
+    public static function getUidByPhone($mobile) {
+        $arrData         = array();
+        $header          = array(
+            'pathinfo' => "/session/api/getuserinfo",
+            'cookie'   => $_COOKIE,
+        );
+        $arrParams       = array( 'phone' => $mobile );
+        $ret             = ral('zybsession', 'POST', $arrParams, 123, $header);
+        $errno           = ral_get_errno();
+        $errmsg          = ral_get_error();
+        $protocol_status = ral_get_protocol_code();
+        if (false === $ret) {
+            Bd_Log::warning("Error:[service zybsession connect error], Detail:[errno:$errno errmsg:$errmsg protocol_status:$protocol_status]");
+
+            return false;
+        }
+        $ret    = json_decode($ret, true);
+        $errno  = intval($ret['errNo']);
+        $errmsg = strval($ret['errStr']);
+        if ($errno > 0 || empty($ret['data'])) {
+            Bd_Log::warning("Error:[service zybsession connect error], Detail:[errno:$errno errmsg:$errmsg protocol_status:$protocol_status]");
+
+            return false;
+        }
+        $data             = $ret['data'];
+        $arrData['uid']   = 0;
+        $arrData['phone'] = $mobile;
+        foreach ($data as $v) {
+            if ($arrData['uid'] == 0) {
+                $arrData['uid'] = $v['zybuid'];
+            }
+            if ($v['bduid'] == 0) {
+                $arrData['uid'] = $v['zybuid'];
+            }
+        }
+
+        return $arrData;
+    }
+
+    //确认用户前缀
+    public static function checkYuanGong($email, $nickName, $phone) {
+        $arrParams = array(
+            'email'    => $email,
+            'nickName' => $nickName,
+            'phone'    => $phone,
+            'misName'  => 'platmis',
+        );
+        $pathinfo  = 'authmis/api/checkyuangong';
+        $arrHeader = array(
+            'pathinfo' => $pathinfo,
+        );
+        $ret       = ral('authmis', 'POST', $arrParams, 123, $arrHeader);
+        if (false === $ret) {
+            $errno           = ral_get_errno();
+            $errmsg          = ral_get_error();
+            $protocol_status = ral_get_protocol_code();
+            Bd_Log::warning("Error:[service authmis connect error], Detail:[errno:$errno errmsg:$errmsg protocol_status:$protocol_status]");
+
+            return false;
+        }
+        $arrResult = json_decode($ret, true);
+        if ($arrResult['errNo'] > 0) {
+            Bd_Log::warning("Error:[service authmis process error], Detail:[errdetail: $ret]");
+
+            return false;
+        }
+        Bd_Log::addNotice('checkyuangong', $arrResult['data']);
+        if ($arrResult['data'] == 1) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * 生成新的key-value数组
+     * @param $array
+     * @param $newKeyKey
+     * @return array
+     */
+    public static function getNewKeyArray($array, $newKeyKey) {
+        if (!$array) {
+            return array();
+        }
+        $arrRet = array();
+        foreach ($array as $oneRow) {
+            $arrRet[$oneRow[$newKeyKey]] = $oneRow;
+        }
+
+        return $arrRet;
+    }
+
+    public static function parseUserName($uname) {
+        if (empty($uname)) {
+            return '';
+        }
+        $uname = strval($uname);
+        if (preg_match("/^1[34578]\d{9}$/", $uname)) {
+            $uname = substr_replace($uname, '****', 3, 4);
+        }
+
+        return $uname;
+    }
+
+    public static function getMillisecond() {
+
+        list($t1, $t2) = explode(' ', microtime());
+        return (float)sprintf('%.0f', (floatval($t1)+floatval($t2))*1000);
+    }
+
+    /**
+     * 友好的打印变量 - 调试
+     * @param $data
+     */
+    public static function dump($data)
+    {
+        header("Content-type: text/html; charset=utf-8");
+        echo '<pre>';
+        var_dump($data);
+        echo '</pre>';
+    }
+
+    /**
+     * 时间戳转星期
+     * @param $unixtime
+     * @return mixed|string
+     */
+    public static function week($unixtime)
+    {
+        if( empty($unixtime) ) {
+            return '';
+        }
+        $week = array(
+            0   =>  '星期日',
+            1   =>  '星期一',
+            2   =>  '星期二',
+            3   =>  '星期三',
+            4   =>  '星期四',
+            5   =>  '星期五',
+            6   =>  '星期六',
+        );
+        $w = intval(date('w', $unixtime));
+        return $week[$w];
+    }
+
+    /**
+     * 班级授课时间格式化
+     * @param $startUnixTime
+     * @param $stopUnixTime
+     * @return null
+     */
+    public static function teachingTime($startUnixTime, $stopUnixTime)
+    {
+        if( empty($startUnixTime) || empty($stopUnixTime) ) {
+            return null;
+        }
+        $startDate = empty($startUnixTime) ? '' : date('Y.m.d', $startUnixTime);
+        $stopDate  = empty($stopUnixTime)  ? '' : date('Y.m.d', $stopUnixTime);
+        $week      = MisFz_Comm::week($startUnixTime);
+        $startTime = date('H:i', $startUnixTime);
+        $stopTime  = date('H:i', $stopUnixTime);
+        $teachingTime = $startDate . '-' . $stopDate . ' '
+            . $week . $startTime . '-' . $stopTime;
+        return $teachingTime;
+    }
+
+    /**
+     * 是否是 https
+     * @return bool
+     */
+    public static function isHttps()
+    {
+        if((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] == 'https')) {
+            return true;
+        } else{
+            return false;
+        }
+    }
+
+    /**
+     * 更换百度云 BOS 文件的访问协议（http https）
+     * 使之与当前请求协一致
+     * @param $url
+     * @return string
+     */
+    public static function unifyAppendProtocol($url)
+    {
+        $fileUrlInfo    =   parse_url($url);
+        if( $fileUrlInfo===false ) {
+            return $url;
+        }
+        $queryString    =   $fileUrlInfo['query'];unset($fileUrlInfo['query']);
+
+        if( MisFz_Comm::isHttps() ) {
+            $protocol   =   'https://';
+        } else {
+            $protocol   =   'http://';
+        }
+        if( isset($fileUrlInfo['scheme']) ) {
+            $fileUrlInfo['scheme']  =   $protocol;
+        }
+        $url    =   implode('', $fileUrlInfo);
+        return $url . '?' . $queryString;
+    }
+
+    /**
+     * 获取客户端 IP
+     * @param int $type
+     * @return mixed
+     */
+    public static function getClientIp($type=0)
+    {
+        $ip        =    null;
+        $type      =    $type ? 1 : 0;
+
+        if (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            $arr = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+            $pos = array_search('unknown', $arr);
+            if (false !== $pos) {
+                unset($arr[$pos]);
+            }
+            $ip = trim(current($arr));
+        } elseif (isset($_SERVER['HTTP_CLIENT_IP'])) {
+            $ip = $_SERVER['HTTP_CLIENT_IP'];
+        } elseif (isset($_SERVER['REMOTE_ADDR'])) {
+            $ip = $_SERVER['REMOTE_ADDR'];
+        }
+
+        $long = ip2long($ip);
+        $ip   = $long ? [$ip, $long] : ['0.0.0.0', 0];
+
+        return $ip[$type];
+    }
+
+    /**
+     * 百度 BOS 端，资源对象是否存在
+     * @param $objName
+     * @return bool
+     */
+    public static function bosObjExists($objName)
+    {
+        $objBos          =   new Fz_Service_Bos('zyb-charge');
+        $fileObjectMeta  =   $objBos->getObjectMeta($objName);
+        return $fileObjectMeta===false ? false : true;
+    }
+
+
+
+
+} 

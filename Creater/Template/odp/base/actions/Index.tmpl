@@ -1,0 +1,29 @@
+<?php
+
+/**
+ * @name Action_{{APP_NAME_CLASS}}_Index
+ * @desc /mis/
+ */
+class Action_Index extends {{APP_NAME_CLASS}}_Action_Base
+{
+    public function invoke() {
+        // input
+        $arrInput = array(
+            'uid'   => intval($this->_userInfo['uid']),
+            'uname' => strval($this->_userInfo['uname']),
+        );
+
+        $objModel   = new {{APP_NAME_CLASS}}_Privileges($this->_userInfo);
+        $userModels = $objModel->getModels();
+
+        // output
+        $this->_setTpl         = true;
+        $this->_outPut['tpl']  = 'tutor/page/index/index.tpl';
+        $this->_outPut['data'] = array(
+            'uid'         => $arrInput['uid'],
+            'uname'       => $arrInput['uname'],
+            'menuList'    => $userModels,
+            'sysTypeList' => Hk_Util_Category::$SYS_TYPE_ARRAY,
+        );
+    }
+}

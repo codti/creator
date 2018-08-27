@@ -1,0 +1,19 @@
+<?php
+
+/**
+ * @name Action_{{APP_NAME_CLASS}}_View_Index
+ * @desc /mis/
+ */
+class Action_Index extends {{APP_NAME_CLASS}}_Action_Base
+{
+    public function invoke() {
+        if ($_SERVER['REQUEST_URI'] == '/{{APP_NAME}}' || $_SERVER['REQUEST_URI'] == '/{{APP_NAME}}/') {
+            $this->redirect("/{{APP_NAME}}/view");
+        }
+        
+        $content = file_get_contents("/home/homework/webroot/static/{{APP_NAME}}/index.html");
+        $this->_processLog();
+        echo $content;
+        exit;
+    }
+}

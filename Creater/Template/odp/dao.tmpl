@@ -1,0 +1,25 @@
+<?php
+/**
+ * file  : {{FILE}}
+ * author: {{AUTHOR}}
+ * date  : {{DATE}}
+ * brief :
+ */
+class {{CLASS_NAME}} {{PARENT_CLASS}} {
+	public function __construct() {
+		$this->_dbName      = '{{DB_NAME}}';
+        $this->_db     	    = {{DB}};
+        $this->_logFile     = {{LOG_FILE}};
+        $this->_table  	    = '{{DB_TABLE}}';
+        {{PARTION_KEY}}
+        {{PARTION_TYPE}}
+        {{PARTION_NUM}}
+        $this->arrFieldsMap = array(
+{{FIELDS_MAP}}
+        );
+        $this->arrTypesMap = array(
+{{TYPES_MAP}}
+        );
+    }
+}
+

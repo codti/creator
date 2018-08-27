@@ -1,0 +1,219 @@
+<?php
+/***************************************************************************
+ * Copyright (c) 2015 Baidu.com, Inc. All Rights Reserved
+ **************************************************************************/
+
+
+/**
+ * file  : {{FILE}}
+ * author: {{AUTHOR}}
+ * date  : {{DATE}}
+ * brief :
+ */
+class {{APP_NAME_CLASS}}_ArrayUtil
+{
+    protected $data = array();
+
+    /**
+     * 初始化数据
+     * MisFz_ArrayUtil constructor.
+     * @param array $array
+     */
+    public function __construct($array=array())
+    {
+        $this->data = is_array($array) ? $array : array();
+    }
+
+    /**
+     * 装载数据
+     * @param $array
+     * @return mixed
+     */
+    public function loader($array)
+    {
+        $this->data = is_array($array) ? $array : array();
+        return $this;
+    }
+
+    /**
+     * @param $path
+     * @param null $default
+     * @return mixed|null
+     */
+    public function extract($path, $default=null)
+    {
+        $value      =   isset($default) ? $default : null;
+        $transfer   =   $this->data;
+        $path       =   self::explode('.', $path);
+
+        $num    =   0;
+        $total  =   count($path);
+        foreach($path as $item ) {
+            if( isset($transfer[$item]) ) {
+                if( ($num+1)===$total ) {
+                    return $transfer[$item];
+                }
+                $transfer = $transfer[$item];
+                $num++;
+                continue 1;
+            }
+            return $value;
+        }
+        return $value;
+    }
+
+    /**
+     * 获取一个数组的指定列
+     * @param $arr
+     * @param $column
+     * @return array|bool|mixed
+     */
+    public static function column($arr, $column) {
+        if( !is_array($arr) || empty($arr) || empty($column) ) {
+            return [];
+        }
+        $arrResult = array();
+        foreach( $arr as $item ) {
+            if( !is_array($item) || !isset($item[$column]) ) {
+                continue 1;
+            }
+            $arrResult[] = $item[$column];
+        }
+        return $arrResult;
+    }
+
+    /**
+     * 合并一个数组
+     * @param $glue
+     * @param $arr
+     * @return bool|string
+     */
+    public static function implode($glue, $arr) {
+        if( !is_array($arr) || !is_string($glue) || empty($arr) ) {
+            return '';
+        }
+        return implode($glue, $arr);
+    }
+
+    /**
+     * 使用指定列对数组元素进行分组
+     * @param $arr  array 数组
+     * @param $column string 列
+     * @return array|bool
+     */
+    public static function columnGroup($arr, $column) {
+        if( empty($arr) || empty($column) || !is_array($arr) ) {
+            return array();
+        }
+        $arrResult = array();
+        foreach( $arr as $index=>$item ) {
+            if( !isset($item[$column]) ) {
+                continue 1;
+            }
+            $key = $item[$column];
+            $arrResult[$key][] = $item;
+        }
+        return $arrResult;
+    }
+
+    /**
+     * 以制定字符切割字符串转成数组
+     * @param $glue
+     * @param $str
+     * @return array
+     */
+    public static function explode($glue, $str) {
+        return explode($glue, $str);
+    }
+
+    /**
+     * 使用数组中的指定列作为键
+     * @param $index
+     * @param $arr
+     * @return array|bool
+     */
+    public static function columnToIndex($index, $arr) {
+        if( !is_string($index) || !is_array($arr) || empty($index) || empty($arr) ) {
+            return [];
+        }
+        $data = [];
+        foreach( $arr as $item) {
+            if( isset($item[$index]) ) {
+                $data[$item[$index]] = $item;
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * 在数组中提取指定的列
+     * @param $arr
+     * @param $arrColumns
+     * @return array
+     */
+    public static function extractColumn($arr, $arrColumns) {
+        if( !is_array($arr) || !is_array($arrColumns) ) {
+            return false;
+        }
+        $data = [];
+        foreach($arrColumns as $column) {
+            if( isset($arr[$column]) ) {
+                $data[$column] = $arr[$column];
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * 二维数组根据某一列去重
+     * @param $arrInput
+     * @param $column
+     * @return array|bool
+     */
+    public static function columnUnique($arrInput, $column) {
+        if( empty($arrInput) || empty($column) || !isset($arrInput) ) {
+            return false;
+        }
+
+        $arrResult          =   array();
+        $arrColumnValues    =   array();
+
+        foreach ($arrInput as $item) {
+
+            if( !isset($item[$column]) ) {
+                continue 1;
+            }
+
+            $columnValue        =   $item[$column];
+
+            if( isset($arrColumnValues[$columnValue]) ) {
+                continue 1;
+            }
+            $arrResult[]                        =   $item;
+            $arrColumnValues[$item[$column]]    =   true;
+        }
+        return $arrResult;
+
+    }
+
+    /**
+     * 二维数组根据某一列
+     * @param $array
+     * @param $column
+     * @param int $sort
+     * @return mixed
+     */
+    public static function multiSort($array, $column, $sort=SORT_ASC)
+    {
+        $arrFirst   =   array();
+        foreach($array as $key=>$value) {
+            $arrFirst[$key] =   $value[$column];
+        }
+        array_multisort($arrFirst,$sort, $array);
+        return $array;
+    }
+
+
+
+
+} 

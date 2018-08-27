@@ -1,0 +1,39 @@
+<?php
+
+/**
+ * file  : {{FILE}}
+ * author: {{AUTHOR}}
+ * date  : {{DATE}}
+ * brief :
+ */
+class {{APP_NAME_CLASS}}_ExceptionCodes
+{
+
+
+
+	public static $errMsg = array(
+
+
+	);
+
+    /**
+     * 获取错误信息 utf8编码
+     *
+     * 2017-02-21 增加根据规则能获取app内部自定义的错误码
+     *
+     * @param $errno
+     */
+    public static function getErrMsg($errno)
+    {
+        if (isset(self::$errMsg[$errno])) {
+            return self::$errMsg[$errno];
+        } else {
+            $appClass = sprintf("%s_ExceptionCodes", ucfirst(MAIN_APP));            # 获取app内部按照规则自订的错误码信息
+            if (class_exists($appClass) && isset($appClass::$appErrMsg[$errno])) {
+                return $appClass::$appErrMsg[$errno];
+            }
+        }
+
+        return '未知错误';
+    }
+}

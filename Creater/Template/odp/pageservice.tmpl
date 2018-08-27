@@ -1,0 +1,31 @@
+<?php
+
+/**
+ * file  : {{FILE}}
+ * author: {{AUTHOR}}
+ * date  : {{DATE}}
+ * brief :
+ */
+class {{CLASS_NAME}} {{PARENT_CLASS}} {
+	public function __construct() {
+
+	}
+
+	public function execute($arrInput) {
+		//参数校验
+		Hk_Util_Log::start('ps_check_param');
+		$arrInput = self::checkParam($arrInput);
+		Hk_Util_Log::stop('ps_check_param');
+
+		Hk_Util_Log::start('{{LOG}}');
+        //逻辑代码
+		Hk_Util_Log::stop('{{LOG}}');
+
+	}
+
+	private static function checkParam($arrInput) {
+		//参数校验逻辑
+		return $arrInput;
+	}
+
+}
